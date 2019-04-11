@@ -51,6 +51,7 @@ void print_help(char *path)
 {
     printf("*** Image Steganography by LSB substitution ***\n\n"
            "Usage:  \n"
+           "Run from isteg folder: ./build/isteg\n"
            "%s [-e] <text file to encode> <source video> <destination video>\n"
            "%s [-d] <encoded video> <decoded file>\n\n"
            "-e : Encode text in video\n"
