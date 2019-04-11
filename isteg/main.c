@@ -3,11 +3,12 @@
 #include <memory.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <pthread.h>
 #include "bitmap.h"
 #include "stego.h"
 
 
-#define FFMPEG "ffmpeg -t 00:00:14 -i "
+#define FFMPEG "ffmpeg -t 00:00:15 -i "
 #define OUTPUT_IMG "bitmaps/img%05d.bmp"
 #define SOURCE_VIDEO "source_video.avi -r 24/1 "
 #define MAX_NAME 100
@@ -20,13 +21,13 @@ FILE *openforwrite(int filecounter)
     return fopen(fileoutputname, "w");
 }
 
-int file_count()
+int file_count(char path[])
 {
 	int file_count = 0;
 	DIR * dirp;
 	struct dirent * entry;
 
-	dirp = opendir("bitmaps"); /* There should be error handling after this */
+	dirp = opendir(path); /* There should be error handling after this */
 	while ((entry = readdir(dirp)) != NULL) {
     	if (entry->d_type == DT_REG) { /* If the entry is a regular file */
          file_count++;
@@ -37,9 +38,13 @@ int file_count()
 	return file_count;
 }
 
-void ffmpeg_stitch()
-{
-    system("ffmpeg -i out_bitmaps/img%05d.bmp -vcodec rawvideo output.avi");
+void ffmpeg_stitch(char out_vid[])
+{    
+     #define OUT_BMP_PATH "out_bitmaps/img%05d.bmp"
+     char out_vid_cmd[100];
+     sprintf(out_vid_cmd, "ffmpeg -i %s -vcodec rawvideo %s", OUT_BMP_PATH, out_vid);
+     system(out_vid_cmd);
+    //system("ffmpeg -i out_bitmaps/img%05d.bmp -vcodec rawvideo outvid.avi");
 }
 
 void print_help(char *path)
@@ -68,7 +73,7 @@ int text_splitter(char text_file_name[])
 
     while (fgets(line, sizeof line, ptr_readfile) != NULL)
     {
-        if (filecounter < file_count() && linecounter == 7544/file_count())
+        if (filecounter < file_count("bitmaps") && linecounter == 7544/file_count("bitmaps"))
         {
             fclose(ptr_writefile);
             linecounter = 1;
@@ -149,20 +154,19 @@ int main(int argc, char **argv)
     if (mode)
     {
         system("mkdir bitmaps");
-        system("mkdir out_bitmaps");
-        system("mkdir decoded_messages");
-        system("mkdir text_files");
-        system("mkdir out_bitmaps_2");
+        system("mkdir out_bitmaps");       
+        system("mkdir text_files"); 
+
 
         char bitmaps[MAX_NAME];
         char out_bitmaps[MAX_NAME];
         char fileoutputname[MAX_NAME];
 
         
-        //system(command);
-        //text_splitter(argv[2]);
+        system(command);
+        text_splitter(argv[2]);
 
-        for (i = 1; i < file_count()+1; i++)
+        for (i = 1; i < file_count("bitmaps")+1; i++)
         {
 
             sprintf(bitmaps, "bitmaps/img%05d.bmp", i);
@@ -174,24 +178,35 @@ int main(int argc, char **argv)
             printf("encoded image %d\n", i);
             
         }
-        //char *args[] = {"./prog", NULL};
-        //execv(args[0], args);
-        ffmpeg_stitch();
+
+        ffmpeg_stitch(argv[4]);
+        system("rm -r bitmaps");
+        system("rm -r text_files");
+        system("rm -r out_bitmaps");
         
     }
     else
     {
-        
+        #define BITMAP2_PATH "out_bitmaps_2/img%05d.bmp"
+
         char out_bitmaps[MAX_NAME];
         char fileoutputname[MAX_NAME];
-        system("ffmpeg -i output.avi out_bitmaps_2/img%05d.bmp");
-        for (i = 1; i < file_count()+1; i++){
+        char split_cmd [500];
+
+        system("mkdir decoded_messages");
+        system("mkdir out_bitmaps_2");
+
+        sprintf(split_cmd,"ffmpeg -i %s %s", argv[2], BITMAP2_PATH);
+        system(split_cmd);
+        for (i = 1; i < file_count("out_bitmaps_2")+1; i++){
 
             sprintf(out_bitmaps, "out_bitmaps_2/img%05d.bmp", i);
             sprintf(fileoutputname, "decoded_messages/file_part%d.txt", i); 
             decode(out_bitmaps, fileoutputname);
         }
-        //text_stitch(argv[3]);
+        text_stitch(argv[3]);
+        system("rm -r decoded_messages");
+        system("rm -r out_bitmaps_2");
     }
      
     

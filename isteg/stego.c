@@ -66,7 +66,7 @@ bool decode(char *image_source, char *text_destination) {
             buff = 0;
         }
     }
-
+    fclose(text_file);
     bool is_valid = true;
     return is_valid;
 }
